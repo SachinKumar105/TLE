@@ -4,13 +4,16 @@ import contextlib
 import logging
 import math
 import html
-import cairo
+# import cairo
+import cairocffi as cairo
 import os
 import time
-import gi
-gi.require_version('Pango', '1.0')
-gi.require_version('PangoCairo', '1.0')
-from gi.repository import Pango, PangoCairo
+# import gi
+# gi.require_version('Pango', '1.0')
+# gi.require_version('PangoCairo', '1.0')
+# from gi.repository import Pango, PangoCairo
+import pangocffi as Pango
+import pangocairocffi as PangoCairo
 
 import discord
 import random
@@ -52,7 +55,7 @@ def rating_to_color(rating):
     PURPLE = (160, 0, 120)
     CYAN = (0, 165, 170)
     GREY = (70, 70, 70)
-    if rating is None or rating=='N/A':
+    if rating is None:
         return BLACK
     if rating < 1200:
         return GREY
@@ -147,8 +150,8 @@ def get_gudgitters_image(rankings):
     for i, (pos, name, handle, rating) in enumerate(rankings):
         color = rating_to_color(rating)
         draw_bg(y, i%2)
-        draw_row(str(pos), name, handle, str(rating) if rating else 'N/A', color, y)
-        if rating and rating >= 3000:  # nutella
+        draw_row(str(pos), name, handle, str(rating), color, y)
+        if rating != 'N/A' and rating >= 3000:  # nutella
             draw_row('', name[0], handle[0], '', BLACK, y)
         y += LINE_HEIGHT
 
@@ -255,7 +258,6 @@ class Handles(commands.Cog):
         self.font = ImageFont.truetype(constants.NOTO_SANS_CJK_BOLD_FONT_PATH, size=26) # font for ;handle pretty
 
     @commands.Cog.listener()
-    @discord_common.once
     async def on_ready(self):
         cf_common.event_sys.add_listener(self._on_rating_changes)
         self._set_ex_users_inactive_task.start()
@@ -427,7 +429,7 @@ class Handles(commands.Cog):
                 handle = cf_common.user_db.get_handle(user_id, ctx.guild.id)
                 user = cf_common.user_db.fetch_cf_user(handle)
                 handle_display = f'{member.display_name} ({score})'
-                rating = user.rating
+                rating = user.rating if user.rating is not None else 'Unrated'
                 rankings.append((index, handle_display, handle, rating))
                 index += 1
             if index == 10:
@@ -604,7 +606,7 @@ class Handles(commands.Cog):
         await ctx.send_help(ctx.command)
 
     @roleupdate.command(brief='Update Codeforces rank roles')
-    @commands.has_any_role('Admin', 'Moderator')
+    @commands.has_any_role('Admin', 'Moderator', 'coder')
     async def now(self, ctx):
         """Updates Codeforces rank roles for every member in this server."""
         await self._update_ranks(ctx.guild)
@@ -612,7 +614,7 @@ class Handles(commands.Cog):
 
     @roleupdate.command(brief='Enable or disable auto role updates',
                         usage='on|off')
-    @commands.has_any_role('Admin', 'Moderator')
+    @commands.has_any_role('Admin', 'Moderator', 'coder')
     async def auto(self, ctx, arg):
         """Auto role update refers to automatic updating of rank roles when rating
         changes are released on Codeforces. 'on'/'off' disables or enables auto role
@@ -633,7 +635,7 @@ class Handles(commands.Cog):
 
     @roleupdate.command(brief='Publish a rank update for the given contest',
                         usage='here|off|contest_id')
-    @commands.has_any_role('Admin', 'Moderator')
+    @commands.has_any_role('Admin', 'Moderator', 'coder')
     async def publish(self, ctx, arg):
         """This is a feature to publish a summary of rank changes and top rating
         increases in a particular contest for members of this server. 'here' will

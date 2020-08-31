@@ -1,14 +1,16 @@
+import firebase_admin
+from firebase_admin import storage
 import asyncio
 import logging
 import functools
 import random
+import subprocess
 
 import discord
 from discord.ext import commands
 
 from tle.util import codeforces_api as cf
 from tle.util import db
-from tle.util import tasks
 
 logger = logging.getLogger(__name__)
 
@@ -75,50 +77,46 @@ async def bot_error_handler(ctx, exception):
         exc_info = type(exception), exception, exception.__traceback__
         logger.exception('Ignoring exception in command {}:'.format(ctx.command), exc_info=exc_info)
 
+def uploadData():
+    cred = firebase_admin.credentials.Certificate('key.json')
+    firebase_admin.initialize_app(cred, {
+      'databaseURL': 'https://smart-india-hackathon-d1f21.appspot.com/',
+      'storageBucket': 'smart-india-hackathon-d1f21.appspot.com/',
+    })
 
-def once(func):
-    """Decorator that wraps the given async function such that it is executed only once."""
-    first = True
-    @functools.wraps(func)
-    async def wrapper(*args, **kwargs):
-        nonlocal first
-        if first:
-            first = False
-            await func(*args, **kwargs)
-
-    return wrapper
-
-
-def on_ready_event_once(bot):
-    """Decorator that uses bot.event to set the given function as the bot's on_ready event handler,
-    but does not execute it more than once.
-    """
-    def register_on_ready(func):
-        @bot.event
-        @once
-        async def on_ready():
-            await func()
-
-    return register_on_ready
-
+    blob = storage.bucket('smart-india-hackathon-d1f21.appspot.com').blob('data.zip') # intended name of file in Firebase Storage
+    blob.upload_from_filename('data.zip') # path to file on local disk
 
 async def presence(bot):
     await bot.change_presence(activity=discord.Activity(
         type=discord.ActivityType.listening,
         name='your commands'))
     await asyncio.sleep(60)
-
-    @tasks.task(name='OrzUpdate',
-               waiter=tasks.Waiter.fixed_delay(5*60))
-    async def presence_task(_):
-        while True:
-            target = random.choice([
-                member for member in bot.get_all_members()
-                if 'Purgatory' not in {role.name for role in member.roles}
-            ])
+    while True:
+        target = random.choice([
+            member for member in bot.get_all_members()
+            if 'Purgatory' not in {role.name for role in member.roles}
+        ])
+        Activity_Type = random.randint(0, 2)
+        if Activity_Type == 0:
+            await bot.change_presence(activity=discord.Activity(
+                type=discord.ActivityType.listening, name="Kalasala"))
+        elif Activity_Type == 1:
             await bot.change_presence(activity=discord.Game(
                 name=f'{target.display_name} orz'))
-            await asyncio.sleep(10 * 60)
+        elif Activity_Type == 2:
+            await bot.change_presence(activity=discord.Activity(
+                type=discord.ActivityType.watching, name="Hariyali"))
 
-    presence_task.start()
+        logger.info(f"Starting Backup...")
+        bashCommand = "zip data.zip data/db/cache.db data/db/user.db"
+        output, error = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE).communicate()
+        
+        logger.info(f"Uploading to cloud...")
+        uploadData()
 
+        bashCommand = "rm data.zip"
+        output, error = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE).communicate()
+        logger.info(f"Backup Complete")
+
+        await asyncio.sleep(10 * 60)

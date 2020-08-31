@@ -4,8 +4,6 @@ import os
 
 from discord.ext import commands
 
-from tle.util import discord_common
-
 root_logger = logging.getLogger()
 logger = logging.getLogger(__name__)
 
@@ -20,7 +18,6 @@ class Logging(commands.Cog, logging.Handler):
         self.logger = logging.getLogger(self.__class__.__name__)
 
     @commands.Cog.listener()
-    @discord_common.once
     async def on_ready(self):
         self.task = asyncio.create_task(self._log_task())
         width = 79

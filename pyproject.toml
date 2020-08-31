@@ -6,13 +6,23 @@ authors = ["meooow25 <soumiksarkar.3120@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
+setuptools = "^47.3.1"
 "discord.py" = "^1.1"
 seaborn = "^0.9.0"
 lxml = "^4.3"
 pillow = "^5.4"
-pycairo = "^1.19.1"
-PyGObject = "^3.34.0"
 aiocache = "^0.11.1"
+cairocffi = "^1.1.0"
+ujson = "^3.0.0"
+msgpack = "^1.0.0"
+PyNaCl = "^1.4.0"
+pangocffi = "^0.5.0"
+pangocairocffi = "^0.3.0"
+pymongo = "^3.10.1"
+dnspython = "^1.16.0"
+requests = "^2.24.0"
+protobuf = "^3.13.0"
+firebase-admin = "^4.3.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"

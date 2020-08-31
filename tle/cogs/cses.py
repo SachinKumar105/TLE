@@ -3,7 +3,6 @@ from collections import defaultdict
 
 from discord.ext import commands
 from tle.util import cses_scraper as cses
-from tle.util import discord_common
 from tle.util import table
 from tle.util import tasks
 
@@ -22,7 +21,6 @@ class CSES(commands.Cog):
         self.reloading = False
 
     @commands.Cog.listener()
-    @discord_common.once
     async def on_ready(self):
         self._cache_data.start()
 

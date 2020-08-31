@@ -68,10 +68,8 @@ def main():
     # Restrict bot usage to inside guild channels only.
     bot.add_check(no_dm_check)
 
-    # cf_common.initialize needs to run first, so it must be set as the bot's
-    # on_ready event handler rather than an on_ready listener.
-    @discord_common.on_ready_event_once(bot)
-    async def init():
+    @bot.event
+    async def on_ready():
         await cf_common.initialize(args.nodb)
         asyncio.create_task(discord_common.presence(bot))
 

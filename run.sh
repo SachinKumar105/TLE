@@ -6,8 +6,8 @@ cd "$(dirname "$0")"
 [ -e environment ] && . ./environment
 
 while true; do
-    git pull
     poetry install
+    pip install firebase-admin
     FONTCONFIG_FILE=$PWD/extra/fonts.conf poetry run python -m tle
 
     (( $? != 42 )) && break
